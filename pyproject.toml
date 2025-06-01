@@ -1,0 +1,14 @@
+[project]
+name = "pyspark-mcp-server"
+version = "0.1.0"
+description = "Minimal PySpark MCP server inspired by LakeSail"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.5.2",
+    "loguru",
+    "pyspark>=3.5",
+]
+
+[tool.uv]
+package = true
