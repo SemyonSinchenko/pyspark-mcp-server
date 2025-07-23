@@ -2,9 +2,12 @@
 
 ## Description
 
-PySpark MCP Server is a lightweight server implementation providing query optimization capabilities for Spark SQL. This
-project aims to create a simple yet useful Spark MCP (Model, Control, Presenter) server. It is designed specifically as
-a query optimization tool rather than a full-featured data lake discovery solution.
+PySpark MCP Server is a lightweight server implementation of Model Context Protocol (MCP) for Apache Spark.
+
+The primary purpose of this MCP server is to facilitate query optimization using AI systems. It provides both logical
+and physical query plans from Spark to AI systems for analysis, along with additional query plan information.
+Furthermore, the server exposes catalog and table information, enabling data discovery capabilities in data lakes
+powered by Spark.
 
 ## Quick Start
 
@@ -31,10 +34,9 @@ spark-submit --master "local[1]" ./pyspark_mcp_server/mcp_server.py --host "127.
 
 The following tools are included in the PySpark MCP Server:
 
-| Tool                                            | Description                                                                                   |
+| MCP Tool                                        | Description                                                                                   |
 |-------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| Run SQL query                                   | Run the provided SQL query and return results as JSON                                         |
-| Get the version of PySpark                      | Get the version number from the current PySpark Sessiion                                      |
+| Get the version of PySpark                      | Get the version number from the current PySpark Session                                       |
 | Get Analyzed Plan of the query                  | Extracts an analyzed logical plan from the provided SQL query                                 |
 | Get Optimized Plan of the query                 | Extracts an optimized logical plan from the provided SQL query                                |
 | Get size estimation for the query results       | Extracts a size and units from the query plan explain                                         |
