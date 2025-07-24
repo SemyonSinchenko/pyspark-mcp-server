@@ -3,19 +3,17 @@ from __future__ import annotations
 import argparse
 import io
 import re
-from contextlib import asynccontextmanager
-from contextlib import redirect_stdout, suppress
-from typing import AsyncIterator, TYPE_CHECKING
+from contextlib import asynccontextmanager, redirect_stdout, suppress
+from typing import AsyncIterator
 
 import loguru
 from fastmcp import FastMCP
-from fastmcp.tools import Tool
 from fastmcp.server.dependencies import get_context
+from fastmcp.tools import Tool
+from pyspark.sql import SparkSession
 
 logger = loguru.logger
 
-if TYPE_CHECKING:
-    from pyspark.sql import SparkSession
 
 
 def get_spark_version() -> str:
