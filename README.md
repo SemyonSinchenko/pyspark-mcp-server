@@ -30,7 +30,7 @@ claude mcp add --transport sse pyspark-mcp 127.0.0.1:8090
 
 ### Dependencies
 
-- Python >= 3.10
+- Python >=3.10,<4.0
 - fastmcp >= 2.10.6
 - loguru
 - pyspark >= 3.5
