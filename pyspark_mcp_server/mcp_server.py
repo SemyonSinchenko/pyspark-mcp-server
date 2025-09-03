@@ -15,7 +15,6 @@ from pyspark.sql import SparkSession
 logger = loguru.logger
 
 
-
 def get_spark_version() -> str:
     spark: SparkSession = get_context().request_context.lifespan_context
     return spark.version
@@ -97,9 +96,7 @@ def get_current_spark_catalog() -> str:
 
 
 def check_database_exists(db_name: str) -> bool:
-    return get_context().request_context.lifespan_context.catalog.databaseExists(
-        db_name
-    )
+    return get_context().request_context.lifespan_context.catalog.databaseExists(db_name)
 
 
 def get_current_spark_database() -> str:
@@ -290,7 +287,7 @@ def start_mcp_server() -> FastMCP:
     return mcp
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Start MCP server")
     parser.add_argument(
         "--host",
@@ -298,9 +295,11 @@ if __name__ == "__main__":
         default="127.0.0.1",
         help="Host address (default: 127.0.0.1)",
     )
-    parser.add_argument(
-        "--port", type=int, default=8009, help="Port number (default: 8009)"
-    )
+    parser.add_argument("--port", type=int, default=8009, help="Port number (default: 8009)")
 
     args = parser.parse_args()
-    start_mcp_server().run(transport="sse", port=args.port, host=args.host)
+    start_mcp_server().run(transport="http", port=args.port, host=args.host)
+
+
+if __name__ == "__main__":
+    main()

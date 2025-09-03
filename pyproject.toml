@@ -15,6 +15,9 @@ dependencies = [
     "pandas (>=2.3.2,<3.0.0)",
 ]
 
+[project.scripts]
+pyspark-mcp-server = "pyspark_mcp_server.mcp_server:main"
+
 [dependency-groups]
 dev = [
     "ruff",
