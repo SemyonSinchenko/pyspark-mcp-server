@@ -25,7 +25,7 @@ spark-submit --master "local[1]" ./pyspark_mcp_server/mcp_server.py --host "127.
 ### Adding the running MCP to the Claude-code
 
 ```sh
-claude mcp add --transport http pyspark-mcp https://127.0.0.1:8090/mcp
+claude mcp add --transport http pyspark-mcp http://127.0.0.1:8090/mcp
 ```
 
 ### Dependencies
