@@ -14,9 +14,10 @@ dependencies = [
     "pyspark>=3.5",
     "pandas (>=2.3.2,<3.0.0)",
 ]
-
-[project.scripts]
-pyspark-mcp-server = "pyspark_mcp_server.mcp_server:main"
+authors = [
+    {name = "Sem Sinchenko", email = "semensinchenko@gmail.com"},
+    {name = "Russell Jurney", email = "russell.jurney@gmail.com"}
+]
 
 [dependency-groups]
 dev = [
