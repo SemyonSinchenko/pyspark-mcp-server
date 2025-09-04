@@ -4,9 +4,10 @@ import argparse
 import io
 import re
 from contextlib import asynccontextmanager, redirect_stdout, suppress
-from typing import AsyncIterator
+from typing import AsyncIterator, cast
 
 import loguru
+import pandas as pd
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_context
 from fastmcp.tools import Tool
@@ -23,7 +24,7 @@ def get_spark_version() -> str:
 def run_sql_query(query: str) -> str:
     spark: SparkSession = get_context().request_context.lifespan_context
     result = spark.sql(query)
-    return result.toPandas().to_json(orient="records")
+    return cast(pd.DataFrame, result.toPandas()).to_json(orient="records")
 
 
 def get_analyzed_logical_plan_of_query(query: str) -> str:
@@ -96,7 +97,9 @@ def get_current_spark_catalog() -> str:
 
 
 def check_database_exists(db_name: str) -> bool:
-    return get_context().request_context.lifespan_context.catalog.databaseExists(db_name)
+    return get_context().request_context.lifespan_context.catalog.databaseExists(
+        db_name
+    )
 
 
 def get_current_spark_database() -> str:
@@ -295,7 +298,9 @@ def main():
         default="127.0.0.1",
         help="Host address (default: 127.0.0.1)",
     )
-    parser.add_argument("--port", type=int, default=8009, help="Port number (default: 8009)")
+    parser.add_argument(
+        "--port", type=int, default=8009, help="Port number (default: 8009)"
+    )
 
     args = parser.parse_args()
     start_mcp_server().run(transport="http", port=args.port, host=args.host)
