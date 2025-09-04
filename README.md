@@ -11,7 +11,7 @@ powered by Spark.
 
 ## Quick Start
 
-#### Running the Server
+### Running the Server
 
 The server must be run using `spark-submit` to ensure proper configuration of Spark environment and dependencies. This
 allows passing Spark configurations, additional JARs, and YARN settings through standard Spark arguments.
@@ -22,7 +22,7 @@ Example command:
 spark-submit --master "local[1]" ./pyspark_mcp_server/mcp_server.py --host "127.0.0.1" --port 8090
 ```
 
-#### Adding the running MCP to the Claude-code
+### Adding the running MCP to the Claude-code
 
 ```sh
 claude mcp add --transport http pyspark-mcp https://127.0.0.1:8090/mcp
