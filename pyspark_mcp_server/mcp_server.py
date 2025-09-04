@@ -299,7 +299,7 @@ def main():
         help="Host address (default: 127.0.0.1)",
     )
     parser.add_argument(
-        "--port", type=int, default=8009, help="Port number (default: 8009)"
+        "--port", type=int, default=8090, help="Port number (default: 8090)"
     )
 
     args = parser.parse_args()
