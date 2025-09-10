@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
-build-backend = "hatchling.build"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "pyspark-mcp-server"
@@ -21,20 +21,13 @@ authors = [
 
 [dependency-groups]
 dev = [
-    "ruff",
+    "black",
+    "flake8",
+    "isort",
+    "mypy",
+    "pre-commit",
+    "pandas-stubs",
 ]
-
-[tool.ruff]
-line-length = 120
-
-[tool.hatch.build.targets.wheel]
-packages = ["pyspark_mcp_server"]
-
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.version.raw-options]
-version_scheme = "no-guess-dev"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
