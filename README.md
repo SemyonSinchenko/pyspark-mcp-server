@@ -4,17 +4,13 @@
 
 PySpark MCP Server is a lightweight server implementation of Model Context Protocol (MCP) for Apache Spark.
 
-The primary purpose of this MCP server is to facilitate query optimization using AI systems. It provides both logical
-and physical query plans from Spark to AI systems for analysis, along with additional query plan information.
-Furthermore, the server exposes catalog and table information, enabling data discovery capabilities in data lakes
-powered by Spark.
+The primary purpose of this MCP server is to facilitate query optimization using AI systems. It provides both logical and physical query plans from Spark to AI systems for analysis, along with additional query plan information. Furthermore, the server exposes catalog and table information, enabling data discovery capabilities in data lakes powered by Spark.
 
 ## Quick Start
 
 ### Running the Server
 
-The server must be run using `spark-submit` to ensure proper configuration of Spark environment and dependencies. This
-allows passing Spark configurations, additional JARs, and YARN settings through standard Spark arguments.
+The server must be run using `spark-submit` to ensure proper configuration of Spark environment and dependencies. This allows passing Spark configurations, additional JARs, and YARN settings through standard Spark arguments.
 
 Example command:
 
