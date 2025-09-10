@@ -27,13 +27,13 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v3
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
         with:
           version: "latest"
 
       - name: Build package
-        run: uv build
+        run: poetry build
 
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@release/v1
