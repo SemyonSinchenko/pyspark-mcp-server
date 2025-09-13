@@ -20,3 +20,4 @@ inline-quotes = double
 multiline-quotes = double
 exclude =
     .ipynb_checkpoints
+    .venv
