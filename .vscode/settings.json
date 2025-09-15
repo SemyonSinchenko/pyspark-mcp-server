@@ -1,0 +1,22 @@
+{
+    "editor.rulers": [
+        100
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "python.languageServer": "Pylance",
+    "flake8.args": [
+        "--max-line-length=100"
+    ],
+    "flake8.enabled": true,
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "autoDocstring.docstringFormat": "numpy"
+}

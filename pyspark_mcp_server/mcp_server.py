@@ -4,16 +4,16 @@ import argparse
 import io
 import re
 from contextlib import asynccontextmanager, redirect_stdout, suppress
-from typing import AsyncIterator
+from typing import Any, AsyncIterator, cast
 
 import loguru
+import pandas as pd
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_context
 from fastmcp.tools import Tool
 from pyspark.sql import SparkSession
 
 logger = loguru.logger
-
 
 
 def get_spark_version() -> str:
@@ -24,7 +24,7 @@ def get_spark_version() -> str:
 def run_sql_query(query: str) -> str:
     spark: SparkSession = get_context().request_context.lifespan_context
     result = spark.sql(query)
-    return result.toPandas().to_json(orient="records")
+    return cast(pd.DataFrame, result.toPandas()).to_json(orient="records")
 
 
 def get_analyzed_logical_plan_of_query(query: str) -> str:
@@ -92,17 +92,15 @@ def get_tables_from_plan_of_query(query: str) -> list[str]:
     return tables
 
 
-def get_current_spark_catalog() -> str:
+def get_current_spark_catalog() -> str | Any:
     return get_context().request_context.lifespan_context.catalog.currentCatalog()
 
 
-def check_database_exists(db_name: str) -> bool:
-    return get_context().request_context.lifespan_context.catalog.databaseExists(
-        db_name
-    )
+def check_database_exists(db_name: str) -> bool | Any:
+    return get_context().request_context.lifespan_context.catalog.databaseExists(db_name)
 
 
-def get_current_spark_database() -> str:
+def get_current_spark_database() -> str | Any:
     return get_context().request_context.lifespan_context.catalog.currentDatabase()
 
 
@@ -124,7 +122,7 @@ def list_available_tables() -> list[str]:
     return [str(tb) for tb in tables]
 
 
-def get_table_comment(table_name: str) -> str:
+def get_table_comment(table_name: str) -> str | Any:
     # Partially inspired by the implementation in PySpark-AI
     spark: SparkSession = get_context().request_context.lifespan_context
     with suppress(Exception):
@@ -290,7 +288,7 @@ def start_mcp_server() -> FastMCP:
     return mcp
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser = argparse.ArgumentParser(description="Start MCP server")
     parser.add_argument(
         "--host",
@@ -298,9 +296,11 @@ if __name__ == "__main__":
         default="127.0.0.1",
         help="Host address (default: 127.0.0.1)",
     )
-    parser.add_argument(
-        "--port", type=int, default=8009, help="Port number (default: 8009)"
-    )
+    parser.add_argument("--port", type=int, default=8090, help="Port number (default: 8090)")
 
     args = parser.parse_args()
-    start_mcp_server().run(transport="sse", port=args.port, host=args.host)
+    start_mcp_server().run(transport="http", port=args.port, host=args.host)
+
+
+if __name__ == "__main__":
+    main()

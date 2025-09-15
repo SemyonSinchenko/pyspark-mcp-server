@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  ruff:
+  clean:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -19,15 +19,32 @@ jobs:
         with:
           python-version: "3.11.10"
 
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v3
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
         with:
           version: "latest"
 
-      - name: Run Ruff Check
-        run:
-          uv run ruff check
+      - run: poetry install
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_NO_INTERACTION: "1"
 
-      - name: Run Ruff Format
-        run:
-          uv run ruff format
+      - run: poetry run black pyspark_mcp_server
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_NO_INTERACTION: "1"
+
+      - run: poetry run isort pyspark_mcp_server
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_NO_INTERACTION: "1"
+
+      - run: poetry run flake8
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_NO_INTERACTION: "1"
+
+      - run: poetry run mypy
+        env:
+          POETRY_VIRTUALENVS_IN_PROJECT: "true"
+          POETRY_NO_INTERACTION: "1"
