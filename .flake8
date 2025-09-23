@@ -21,3 +21,8 @@ multiline-quotes = double
 exclude =
     .ipynb_checkpoints
     .venv
+    .poetry
+    dist
+    .claude
+    .github
+    .vscode

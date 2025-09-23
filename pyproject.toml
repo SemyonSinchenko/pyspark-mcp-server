@@ -1,41 +1,67 @@
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
 [project]
 name = "pyspark-mcp-server"
-version = "0.1.1"
 description = "Minimal PySpark MCP server inspired by LakeSail"
-readme = "README.md"
-requires-python = ">=3.11,<4.0"
-dependencies = [
-    "fastmcp>=2.10.6",
-    "loguru",
-    "pyspark>=3.5",
-    "pandas (>=2.3.2,<3.0.0)",
+license = "Apache-2.0"
+readme = { file = "README.md", content-type = "text/markdown" }
+license-files = ["LICENSE"]
+keywords = [
+    "pyspark",
+    "mcp",
+    "llm",
+    "ai"
+]
+packages = [
+    { inlucde = "pyspark_mcp_server" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Intended Audience :: Developers",
+    "Topic :: Database :: Front-Ends",
 ]
 authors = [
-    {name = "Sem Sinchenko", email = "semensinchenko@gmail.com"},
-    {name = "Russell Jurney", email = "russell.jurney@gmail.com"}
+    { name = "Sem Sinchenko", email = "semensinchenko@gmail.com" },
+    { name = "Russell Jurney", email = "russell.jurney@gmail.com" }
 ]
+dynamic = ["version"]
+requires-python = ">=3.11,<4.0"
 
-[dependency-groups]
-dev = [
-    "black",
-    "flake8",
-    "isort",
-    "mypy",
-    "pre-commit",
-    "pandas-stubs",
-]
+[build-system]
+requires = ["poetry-core>=1.0.0", "setuptools", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry]
+version = "0.0.0"
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
+poetry-plugin-export = ">=1.8"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+
+[tool.poetry.urls]
+"Code Repository" = "https://github.com/SemyonSinchenko/pyspark-mcp-server"
+"Bug Tracker" = "https://github.com/SemyonSinchenko/pyspark-mcp-server/issues"
+
+[tool.poetry.dependencies]
+fastmcp = ">=2.10.6"
+loguru = "*"
+pyspark = ">=3.5"
+pandas = ">=2.3.2,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^25.1.0"
-flake8 = "^7.3.0"
-isort = "^6.0.1"
-mypy = "^1.17.1"
-pre-commit = "^4.3.0"
-pandas-stubs = "^2.3.2.250827"
+black = "^25.1"
+flake8 = "^7.3"
+isort = "^6.0"
+mypy = "^1.17"
+pre-commit = "^4.3"
+pandas-stubs = "^2.3"
 
 [tool.black]
 line-length = 100
