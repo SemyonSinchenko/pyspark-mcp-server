@@ -1,5 +1,5 @@
 [project]
-name = "pyspark-mcp-server"
+name = "pyspark-mcp"
 description = "Minimal PySpark MCP server inspired by LakeSail"
 license = "Apache-2.0"
 readme = { file = "README.md", content-type = "text/markdown" }
