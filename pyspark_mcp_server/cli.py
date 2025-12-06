@@ -80,6 +80,9 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
             if i + 1 < len(args_list):
                 i += 1
                 spark_args.append(args_list[i])
+            else:
+                # Missing required value for spark option
+                raise click.UsageError(f"Option {arg} requires a value")
         # Check for --conf style with = (e.g., --conf spark.executor.memory=4g)
         elif arg.startswith("--conf="):
             spark_args.append(arg)
