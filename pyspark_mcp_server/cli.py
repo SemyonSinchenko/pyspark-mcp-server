@@ -124,7 +124,7 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
     help="Print the spark-submit command without executing it",
 )
 @click.pass_context
-def main(
+def main(  # ignore: C901
     ctx: click.Context,
     master: str,
     host: str,
