@@ -196,7 +196,7 @@ def main(  # noqa: C901
     cmd.extend(["--host", host, "--port", str(port)])
 
     # Add any extra MCP args, filtering out --host and --port (and their values)
-    def filter_host_port(args):
+    def filter_host_port(args: list[str]) -> list[str]:
         filtered = []
         skip_next = False
         for i, arg in enumerate(args):
