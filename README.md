@@ -8,15 +8,47 @@ The primary purpose of this MCP server is to facilitate query optimization using
 
 ## Quick Start
 
-### Running the Server
-
-The server must be run using `spark-submit` to ensure proper configuration of Spark environment and dependencies. This allows passing Spark configurations, additional JARs, and YARN settings through standard Spark arguments.
-
-Example command:
+### Installation
 
 ```sh
-spark-submit --master "local[1]" ./pyspark_mcp_server/mcp_server.py --host "127.0.0.1" --port 8090
+pip install pyspark-mcp
 ```
+
+### Running the Server
+
+After installation, use the `pyspark-mcp` command to start the server:
+
+```sh
+pyspark-mcp --master "local[*]" --host 127.0.0.1 --port 8090
+```
+
+The CLI automatically handles `spark-submit` configuration. All standard spark-submit options are supported:
+
+```sh
+# With additional Spark configuration
+pyspark-mcp --master "local[*]" --conf spark.driver.memory=4g
+
+# YARN cluster mode
+pyspark-mcp --master yarn --deploy-mode client --num-executors 4
+
+# With additional JARs
+pyspark-mcp --master "local[*]" --jars /path/to/connector.jar
+
+# Preview the spark-submit command without running
+pyspark-mcp --master "local[*]" --dry-run
+```
+
+#### CLI Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--master` | `local[*]` | Spark master URL |
+| `--host` | `127.0.0.1` | MCP server host address |
+| `--port` | `8090` | MCP server port number |
+| `--spark-submit` | `spark-submit` | Path to spark-submit executable |
+| `--dry-run` | - | Print command without executing |
+
+All spark-submit options (`--conf`, `--jars`, `--packages`, `--executor-memory`, etc.) are passed through automatically.
 
 ### Adding the running MCP to the Claude-code
 
