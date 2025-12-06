@@ -80,8 +80,14 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
             if i + 1 < len(args_list):
                 i += 1
                 spark_args.append(args_list[i])
+            else:
+                # Missing required value for spark option
+                raise click.UsageError(f"Option {arg} requires a value")
         # Check for --conf style with = (e.g., --conf spark.executor.memory=4g)
         elif arg.startswith("--conf="):
+            spark_args.append(arg)
+        # Check for other spark options with = (e.g., --master=local[*], --jars=foo.jar)
+        elif any(arg.startswith(f"{opt}=") for opt in SPARK_OPTIONS_WITH_VALUE):
             spark_args.append(arg)
         # Check if it's a spark flag
         elif arg in SPARK_FLAGS:
@@ -109,7 +115,7 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
 @click.option(
     "--port",
     default=8090,
-    type=int,
+    type=click.IntRange(1, 65535),
     help="MCP server port number (default: 8090)",
 )
 @click.option(
@@ -169,7 +175,19 @@ def main(  # ignore: C901
     ]
 
     # Add any additional spark args
-    cmd.extend(spark_args)
+    # Remove --master and its value from spark_args if --master was provided via Click option
+    filtered_spark_args = []
+    skip_next = False
+    for i, arg in enumerate(spark_args):
+        if skip_next:
+            skip_next = False
+            continue
+        if arg == "--master":
+            # Skip this and the next value
+            skip_next = True
+            continue
+        filtered_spark_args.append(arg)
+    cmd.extend(filtered_spark_args)
 
     # Add the script path
     cmd.append(str(mcp_server_path))
@@ -177,8 +195,22 @@ def main(  # ignore: C901
     # Add MCP server arguments
     cmd.extend(["--host", host, "--port", str(port)])
 
-    # Add any extra MCP args
-    cmd.extend(extra_mcp_args)
+    # Add any extra MCP args, filtering out --host and --port (and their values)
+    def filter_host_port(args):
+        filtered = []
+        skip_next = False
+        for i, arg in enumerate(args):
+            if skip_next:
+                skip_next = False
+                continue
+            if arg in ("--host", "--port"):
+                skip_next = True
+                continue
+            if arg.startswith("--host=") or arg.startswith("--port="):
+                continue
+            filtered.append(arg)
+        return filtered
+    cmd.extend(filter_host_port(extra_mcp_args))
 
     if dry_run:
         click.echo(" ".join(cmd))
@@ -186,6 +218,8 @@ def main(  # ignore: C901
 
     # Set up environment - ensure PYTHONPATH includes the package
     env = os.environ.copy()
+    package_dir = str(Path(mcp_server_path).parent)
+    env["PYTHONPATH"] = package_dir + os.pathsep + env.get("PYTHONPATH", "")
 
     # Execute spark-submit
     try:
