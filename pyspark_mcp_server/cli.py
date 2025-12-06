@@ -86,6 +86,9 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
         # Check for --conf style with = (e.g., --conf spark.executor.memory=4g)
         elif arg.startswith("--conf="):
             spark_args.append(arg)
+        # Check for other spark options with = (e.g., --master=local[*], --jars=foo.jar)
+        elif any(arg.startswith(f"{opt}=") for opt in SPARK_OPTIONS_WITH_VALUE):
+            spark_args.append(arg)
         # Check if it's a spark flag
         elif arg in SPARK_FLAGS:
             spark_args.append(arg)
