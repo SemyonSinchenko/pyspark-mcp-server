@@ -130,7 +130,7 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
     help="Print the spark-submit command without executing it",
 )
 @click.pass_context
-def main(  # ignore: C901
+def main(  # noqa: C901
     ctx: click.Context,
     master: str,
     host: str,
@@ -210,6 +210,7 @@ def main(  # ignore: C901
                 continue
             filtered.append(arg)
         return filtered
+
     cmd.extend(filter_host_port(extra_mcp_args))
 
     if dry_run:
