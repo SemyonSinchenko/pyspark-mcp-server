@@ -175,7 +175,19 @@ def main(
     ]
 
     # Add any additional spark args
-    cmd.extend(spark_args)
+    # Remove --master and its value from spark_args if --master was provided via Click option
+    filtered_spark_args = []
+    skip_next = False
+    for i, arg in enumerate(spark_args):
+        if skip_next:
+            skip_next = False
+            continue
+        if arg == "--master":
+            # Skip this and the next value
+            skip_next = True
+            continue
+        filtered_spark_args.append(arg)
+    cmd.extend(filtered_spark_args)
 
     # Add the script path
     cmd.append(str(mcp_server_path))
