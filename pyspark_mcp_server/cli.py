@@ -109,7 +109,7 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
 @click.option(
     "--port",
     default=8090,
-    type=int,
+    type=click.IntRange(1, 65535),
     help="MCP server port number (default: 8090)",
 )
 @click.option(
