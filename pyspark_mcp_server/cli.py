@@ -195,8 +195,22 @@ def main(
     # Add MCP server arguments
     cmd.extend(["--host", host, "--port", str(port)])
 
-    # Add any extra MCP args
-    cmd.extend(extra_mcp_args)
+    # Add any extra MCP args, filtering out --host and --port (and their values)
+    def filter_host_port(args):
+        filtered = []
+        skip_next = False
+        for i, arg in enumerate(args):
+            if skip_next:
+                skip_next = False
+                continue
+            if arg in ("--host", "--port"):
+                skip_next = True
+                continue
+            if arg.startswith("--host=") or arg.startswith("--port="):
+                continue
+            filtered.append(arg)
+        return filtered
+    cmd.extend(filter_host_port(extra_mcp_args))
 
     if dry_run:
         click.echo(" ".join(cmd))
