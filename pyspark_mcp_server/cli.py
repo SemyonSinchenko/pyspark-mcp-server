@@ -218,6 +218,8 @@ def main(
 
     # Set up environment - ensure PYTHONPATH includes the package
     env = os.environ.copy()
+    package_dir = str(Path(mcp_server_path).parent)
+    env["PYTHONPATH"] = package_dir + os.pathsep + env.get("PYTHONPATH", "")
 
     # Execute spark-submit
     try:
