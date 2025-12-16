@@ -289,6 +289,28 @@ def start_mcp_server() -> FastMCP:
     return mcp
 
 
+def _create_socket_with_reuse(host: str, port: int) -> socket.socket:
+    """Create a TCP socket with SO_REUSEADDR and SO_REUSEPORT options.
+
+    This allows immediate port reuse when the server is restarted, preventing
+    "address already in use" errors that occur on some platforms (especially macOS)
+    when the previous server process hasn't fully released the port.
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    # Set SO_REUSEPORT if available (Unix-like systems including macOS and Linux)
+    # This is especially important on macOS where SO_REUSEADDR alone is insufficient
+    if hasattr(socket, "SO_REUSEPORT"):
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        except (OSError, AttributeError):
+            # SO_REUSEPORT might not be supported on some systems
+            pass
+
+    return sock
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Start MCP server")
     parser.add_argument(
@@ -301,42 +323,31 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Create a socket with SO_REUSEADDR and SO_REUSEPORT to allow immediate port reuse
-    # This prevents "address already in use" errors when the server is restarted
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    # Monkey-patch the socket creation in uvicorn to add SO_REUSEPORT
+    # This ensures the socket created by uvicorn has the proper options set
+    original_socket = socket.socket
 
-    # Set SO_REUSEPORT if available (Unix-like systems including macOS and Linux)
-    if hasattr(socket, "SO_REUSEPORT"):
-        try:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        except (OSError, AttributeError):
-            # SO_REUSEPORT might not be supported on some systems
-            pass
+    def patched_socket(
+        family: int = socket.AF_INET, type: int = socket.SOCK_STREAM, *args: Any, **kwargs: Any
+    ) -> socket.socket:
+        sock = original_socket(family, type, *args, **kwargs)
+        # Add SO_REUSEPORT if this is a TCP socket
+        if family == socket.AF_INET and type == socket.SOCK_STREAM:
+            if hasattr(socket, "SO_REUSEPORT"):
+                try:
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+                except (OSError, AttributeError):
+                    pass
+        return sock
+
+    # Apply the patch
+    socket.socket = patched_socket  # type: ignore[misc]
 
     try:
-        sock.bind((args.host, args.port))
-        sock.listen()
-    except OSError as e:
-        logger.error(
-            f"Failed to bind to {args.host}:{args.port}. "
-            f"Error: {e}. "
-            "If the port is already in use, please kill the existing process or use a different port."
-        )
-        sock.close()
-        raise
-
-    # Pass the socket's file descriptor to uvicorn
-    fd = sock.fileno()
-
-    # Configure uvicorn to use our custom socket
-    uvicorn_config = {
-        "fd": fd,
-    }
-
-    start_mcp_server().run(
-        transport="http", host=args.host, port=args.port, uvicorn_config=uvicorn_config
-    )
+        start_mcp_server().run(transport="http", port=args.port, host=args.host)
+    finally:
+        # Restore original socket function
+        socket.socket = original_socket  # type: ignore[misc]
 
 
 if __name__ == "__main__":
