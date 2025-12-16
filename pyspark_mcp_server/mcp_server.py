@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import io
 import re
+import socket
 from contextlib import asynccontextmanager, redirect_stdout, suppress
 from typing import Any, AsyncIterator, cast
 
@@ -299,7 +300,43 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8090, help="Port number (default: 8090)")
 
     args = parser.parse_args()
-    start_mcp_server().run(transport="http", port=args.port, host=args.host)
+
+    # Create a socket with SO_REUSEADDR and SO_REUSEPORT to allow immediate port reuse
+    # This prevents "address already in use" errors when the server is restarted
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    # Set SO_REUSEPORT if available (Unix-like systems including macOS and Linux)
+    if hasattr(socket, "SO_REUSEPORT"):
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        except (OSError, AttributeError):
+            # SO_REUSEPORT might not be supported on some systems
+            pass
+
+    try:
+        sock.bind((args.host, args.port))
+        sock.listen()
+    except OSError as e:
+        logger.error(
+            f"Failed to bind to {args.host}:{args.port}. "
+            f"Error: {e}. "
+            "If the port is already in use, please kill the existing process or use a different port."
+        )
+        sock.close()
+        raise
+
+    # Pass the socket's file descriptor to uvicorn
+    fd = sock.fileno()
+
+    # Configure uvicorn to use our custom socket
+    uvicorn_config = {
+        "fd": fd,
+    }
+
+    start_mcp_server().run(
+        transport="http", host=args.host, port=args.port, uvicorn_config=uvicorn_config
+    )
 
 
 if __name__ == "__main__":
