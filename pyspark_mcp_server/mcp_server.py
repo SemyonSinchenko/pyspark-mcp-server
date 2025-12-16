@@ -289,28 +289,6 @@ def start_mcp_server() -> FastMCP:
     return mcp
 
 
-def _create_socket_with_reuse(host: str, port: int) -> socket.socket:
-    """Create a TCP socket with SO_REUSEADDR and SO_REUSEPORT options.
-
-    This allows immediate port reuse when the server is restarted, preventing
-    "address already in use" errors that occur on some platforms (especially macOS)
-    when the previous server process hasn't fully released the port.
-    """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    # Set SO_REUSEPORT if available (Unix-like systems including macOS and Linux)
-    # This is especially important on macOS where SO_REUSEADDR alone is insufficient
-    if hasattr(socket, "SO_REUSEPORT"):
-        try:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        except (OSError, AttributeError):
-            # SO_REUSEPORT might not be supported on some systems
-            pass
-
-    return sock
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Start MCP server")
     parser.add_argument(
@@ -323,20 +301,24 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Monkey-patch the socket creation in uvicorn to add SO_REUSEPORT
-    # This ensures the socket created by uvicorn has the proper options set
+    # Monkey-patch the socket creation to add SO_REUSEPORT
+    # This ensures sockets created by uvicorn can be immediately reused after the server stops,
+    # preventing "address already in use" errors especially on macOS
     original_socket = socket.socket
 
     def patched_socket(
         family: int = socket.AF_INET, type: int = socket.SOCK_STREAM, *args: Any, **kwargs: Any
     ) -> socket.socket:
         sock = original_socket(family, type, *args, **kwargs)
-        # Add SO_REUSEPORT if this is a TCP socket
+        # Add SO_REUSEADDR and SO_REUSEPORT for TCP sockets
+        # SO_REUSEADDR allows reuse after TIME_WAIT, SO_REUSEPORT enables immediate reuse
         if family == socket.AF_INET and type == socket.SOCK_STREAM:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             if hasattr(socket, "SO_REUSEPORT"):
                 try:
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
                 except (OSError, AttributeError):
+                    # SO_REUSEPORT might not be supported on some systems
                     pass
         return sock
 
