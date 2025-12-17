@@ -1,6 +1,14 @@
 [project]
 name = "pyspark-mcp"
 description = "Minimal PySpark MCP server inspired by LakeSail"
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "click>=8.0",
+    "fastmcp>=2.10.6",
+    "loguru",
+    "pyspark>=3.5",
+    "pandas (>=2.3.2,<3.0.0)",
+]
 license = "Apache-2.0"
 readme = { file = "README.md", content-type = "text/markdown" }
 license-files = ["LICENSE"]
@@ -29,7 +37,6 @@ authors = [
     { name = "Russell Jurney", email = "russell.jurney@gmail.com" }
 ]
 dynamic = ["version"]
-requires-python = ">=3.11,<4.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
@@ -65,6 +72,9 @@ isort = "^6.0"
 mypy = "^1.17"
 pre-commit = "^4.3"
 pandas-stubs = "^2.3"
+
+[project.scripts]
+pyspark-mcp = "pyspark_mcp_server.cli:main"
 
 [tool.black]
 line-length = 100
