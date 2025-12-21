@@ -1,4 +1,4 @@
-hi# PySpark MCP Server
+# PySpark MCP Server
 
 ## Description
 
