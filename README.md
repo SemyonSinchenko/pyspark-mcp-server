@@ -56,6 +56,7 @@ All spark-submit options (`--conf`, `--jars`, `--packages`, `--executor-memory`,
 ### Adding the running MCP to the Claude-code
 
 ```sh
+# Must run one server on a different port per Claude instance
 claude mcp add --transport http pyspark-mcp http://127.0.0.1:8090/mcp
 ```
 
