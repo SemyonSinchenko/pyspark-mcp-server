@@ -1,4 +1,4 @@
-# PySpark MCP Server
+hi# PySpark MCP Server
 
 ## Description
 
@@ -36,6 +36,9 @@ pyspark-mcp --master "local[*]" --jars /path/to/connector.jar
 
 # Preview the spark-submit command without running
 pyspark-mcp --master "local[*]" --dry-run
+
+# With GraphFrames package
+pyspark-mcp --master "local[*]" --packages io.graphframes:graphframes-spark3_2.12:0.10.0
 ```
 
 #### CLI Options
@@ -53,6 +56,7 @@ All spark-submit options (`--conf`, `--jars`, `--packages`, `--executor-memory`,
 ### Adding the running MCP to the Claude-code
 
 ```sh
+# Must run one server on a different port per Claude instance
 claude mcp add --transport http pyspark-mcp http://127.0.0.1:8090/mcp
 ```
 
