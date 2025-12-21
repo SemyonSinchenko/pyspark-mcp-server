@@ -17,19 +17,19 @@ logger = loguru.logger
 
 
 def get_spark_version() -> str:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     return spark.version
 
 
 def run_sql_query(query: str) -> str:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     result = spark.sql(query)
     return cast(pd.DataFrame, result.toPandas()).to_json(orient="records")
 
 
 def get_analyzed_logical_plan_of_query(query: str) -> str:
     # Partialy inspired by the implementation in PySpark-AI
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     df = spark.sql(query)
     with redirect_stdout(io.StringIO()) as stdout_var:
         df.explain(extended=True)
@@ -42,7 +42,7 @@ def get_analyzed_logical_plan_of_query(query: str) -> str:
 
 
 def get_optimized_logical_plan_of_query(query: str) -> str:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     df = spark.sql(query)
     with redirect_stdout(io.StringIO()) as stdout_var:
         df.explain(extended=True)
@@ -56,7 +56,7 @@ def get_optimized_logical_plan_of_query(query: str) -> str:
 
 def get_size_in_bytes_estimation_of_query(query: str) -> tuple[float, str]:
     # Partially inpired by https://semyonsinchenko.github.io/ssinchenko/post/estimation-spark-df-size/
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     df = spark.sql(query)
     with redirect_stdout(io.StringIO()) as stdout_var:
         df.explain(mode="cost")
@@ -93,38 +93,38 @@ def get_tables_from_plan_of_query(query: str) -> list[str]:
 
 
 def get_current_spark_catalog() -> str | Any:
-    return get_context().request_context.lifespan_context.catalog.currentCatalog()
+    return get_context().request_context.lifespan_context.catalog.currentCatalog()  # type: ignore
 
 
 def check_database_exists(db_name: str) -> bool | Any:
-    return get_context().request_context.lifespan_context.catalog.databaseExists(db_name)
+    return get_context().request_context.lifespan_context.catalog.databaseExists(db_name)  # type: ignore
 
 
 def get_current_spark_database() -> str | Any:
-    return get_context().request_context.lifespan_context.catalog.currentDatabase()
+    return get_context().request_context.lifespan_context.catalog.currentDatabase()  # type: ignore
 
 
 def list_available_databases() -> list[str]:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     databases = spark.catalog.listDatabases()
     return [str(db) for db in databases]
 
 
 def list_available_catalogs() -> list[str]:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     catalogs = spark.catalog.listCatalogs()
     return [str(ct) for ct in catalogs]
 
 
 def list_available_tables() -> list[str]:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     tables = spark.catalog.listTables()
     return [str(tb) for tb in tables]
 
 
 def get_table_comment(table_name: str) -> str | Any:
     # Partially inspired by the implementation in PySpark-AI
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     with suppress(Exception):
         # Get the output of describe table
         outputs = spark.sql("DESC extended " + table_name).collect()
@@ -138,17 +138,17 @@ def get_table_comment(table_name: str) -> str | Any:
 
 
 def get_table_schema(table_name: str) -> str:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     return spark.table(table_name).schema.json()
 
 
 def get_output_schema_of_query(query: str) -> str:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     return spark.sql(query).schema.json()
 
 
 def read_n_lines_of_text_file(file_path: str, num_lines: int) -> list[str]:
-    spark: SparkSession = get_context().request_context.lifespan_context
+    spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     rows = spark.read.text(file_path).head(num_lines)
     return [r["value"] for r in rows]
 
