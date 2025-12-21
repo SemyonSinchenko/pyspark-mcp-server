@@ -1,4 +1,4 @@
-# PySpark MCP Server
+hi# PySpark MCP Server
 
 ## Description
 
@@ -36,6 +36,9 @@ pyspark-mcp --master "local[*]" --jars /path/to/connector.jar
 
 # Preview the spark-submit command without running
 pyspark-mcp --master "local[*]" --dry-run
+
+# With GraphFrames package
+pyspark-mcp --master "local[*]" --packages io.graphframes:graphframes-spark3_2.12:0.10.0
 ```
 
 #### CLI Options
