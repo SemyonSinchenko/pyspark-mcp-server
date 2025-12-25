@@ -4,7 +4,6 @@ import argparse
 import io
 import re
 import signal
-import socket
 import sys
 from contextlib import asynccontextmanager, redirect_stdout, suppress
 from typing import Any, AsyncIterator, cast
@@ -303,30 +302,10 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Add SO_REUSEPORT to sockets for immediate port reuse, especially on macOS
-    # This is a defensive measure to handle cases where clean shutdown doesn't occur
-    original_socket = socket.socket
-
-    def patched_socket(
-        family: int = socket.AF_INET, type: int = socket.SOCK_STREAM, *args: Any, **kwargs: Any
-    ) -> socket.socket:
-        sock = original_socket(family, type, *args, **kwargs)
-        # Apply to both IPv4 and IPv6 TCP sockets
-        if (family in (socket.AF_INET, socket.AF_INET6)) and type == socket.SOCK_STREAM:
-            # SO_REUSEPORT enables immediate port reuse (critical on macOS)
-            if hasattr(socket, "SO_REUSEPORT"):
-                try:
-                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-                except (OSError, AttributeError):
-                    pass
-        return sock
-
-    socket.socket = patched_socket  # type: ignore[misc]
-
     # Set up signal handlers for clean shutdown
+    # This ensures the server stops properly when receiving SIGINT (CTRL-C) or SIGTERM
     def signal_handler(signum: int, frame: Any) -> None:
         logger.info(f"Received signal {signum}, shutting down gracefully...")
-        socket.socket = original_socket  # type: ignore[misc]
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -336,8 +315,6 @@ def main() -> None:
         start_mcp_server().run(transport="http", port=args.port, host=args.host)
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received, shutting down...")
-    finally:
-        socket.socket = original_socket  # type: ignore[misc]
 
 
 if __name__ == "__main__":
