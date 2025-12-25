@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import io
 import re
+import signal
+import sys
 from contextlib import asynccontextmanager, redirect_stdout, suppress
 from typing import Any, AsyncIterator, cast
 
@@ -299,7 +301,21 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8090, help="Port number (default: 8090)")
 
     args = parser.parse_args()
-    start_mcp_server().run(transport="http", port=args.port, host=args.host)
+
+    # Set up signal handlers for clean shutdown
+    # This ensures the server stops properly when receiving SIGINT (CTRL-C) or SIGTERM,
+    # preventing port binding issues on restart
+    def signal_handler(signum: int, frame: Any) -> None:
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        start_mcp_server().run(transport="http", port=args.port, host=args.host)
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
 
 
 if __name__ == "__main__":
