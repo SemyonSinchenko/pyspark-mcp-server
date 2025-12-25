@@ -303,7 +303,8 @@ def main() -> None:
     args = parser.parse_args()
 
     # Set up signal handlers for clean shutdown
-    # This ensures the server stops properly when receiving SIGINT (CTRL-C) or SIGTERM
+    # This ensures the server stops properly when receiving SIGINT (CTRL-C) or SIGTERM,
+    # preventing port binding issues on restart
     def signal_handler(signum: int, frame: Any) -> None:
         logger.info(f"Received signal {signum}, shutting down gracefully...")
         sys.exit(0)
