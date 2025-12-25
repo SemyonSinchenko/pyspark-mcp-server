@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import io
 import re
+import signal
 import socket
+import sys
 from contextlib import asynccontextmanager, redirect_stdout, suppress
 from typing import Any, AsyncIterator, cast
 
@@ -301,35 +303,41 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Monkey-patch the socket creation to add SO_REUSEPORT
-    # This ensures sockets created by uvicorn can be immediately reused after the server stops,
-    # preventing "address already in use" errors especially on macOS
+    # Set up signal handlers for clean shutdown
+    # This ensures the server stops properly when receiving SIGINT (CTRL-C) or SIGTERM
+    def signal_handler(signum: int, frame: Any) -> None:
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Add SO_REUSEPORT to sockets for immediate port reuse, especially on macOS
+    # This is a defensive measure in addition to proper signal handling
     original_socket = socket.socket
 
     def patched_socket(
         family: int = socket.AF_INET, type: int = socket.SOCK_STREAM, *args: Any, **kwargs: Any
     ) -> socket.socket:
         sock = original_socket(family, type, *args, **kwargs)
-        # Add SO_REUSEADDR and SO_REUSEPORT for TCP sockets
-        # SO_REUSEADDR allows reuse after TIME_WAIT, SO_REUSEPORT enables immediate reuse
         if family == socket.AF_INET and type == socket.SOCK_STREAM:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # SO_REUSEPORT enables immediate port reuse (critical on macOS)
             if hasattr(socket, "SO_REUSEPORT"):
                 try:
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
                 except (OSError, AttributeError):
-                    # SO_REUSEPORT might not be supported on some systems
                     pass
         return sock
 
-    # Apply the patch
     socket.socket = patched_socket  # type: ignore[misc]
 
     try:
         start_mcp_server().run(transport="http", port=args.port, host=args.host)
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
     finally:
-        # Restore original socket function
         socket.socket = original_socket  # type: ignore[misc]
+        sys.exit(0)
 
 
 if __name__ == "__main__":
