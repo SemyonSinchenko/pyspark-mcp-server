@@ -12,39 +12,25 @@ jobs:
   clean:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11.10"
+        run: uv python install 3.11
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: "latest"
+      - name: Install dependencies
+        run: uv sync --all-groups
 
-      - run: poetry install
-        env:
-          POETRY_VIRTUALENVS_IN_PROJECT: "true"
-          POETRY_NO_INTERACTION: "1"
+      - name: Run black
+        run: uv run black pyspark_mcp_server --check
 
-      - run: poetry run black pyspark_mcp_server
-        env:
-          POETRY_VIRTUALENVS_IN_PROJECT: "true"
-          POETRY_NO_INTERACTION: "1"
+      - name: Run isort
+        run: uv run isort pyspark_mcp_server --check
 
-      - run: poetry run isort pyspark_mcp_server
-        env:
-          POETRY_VIRTUALENVS_IN_PROJECT: "true"
-          POETRY_NO_INTERACTION: "1"
+      - name: Run flake8
+        run: uv run flake8
 
-      - run: poetry run flake8
-        env:
-          POETRY_VIRTUALENVS_IN_PROJECT: "true"
-          POETRY_NO_INTERACTION: "1"
-
-      - run: poetry run mypy
-        env:
-          POETRY_VIRTUALENVS_IN_PROJECT: "true"
-          POETRY_NO_INTERACTION: "1"
+      - name: Run mypy
+        run: uv run mypy
