@@ -125,6 +125,12 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
     help="Path to spark-submit executable (default: spark-submit)",
 )
 @click.option(
+    "--aws-profile",
+    default=None,
+    help="AWS profile name from ~/.aws/config to use for S3 access. "
+    "Use 'default' for the default profile.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Print the spark-submit command without executing it",
@@ -136,6 +142,7 @@ def main(  # noqa: C901
     host: str,
     port: int,
     spark_submit_path: str,
+    aws_profile: str | None,
     dry_run: bool,
 ) -> None:
     """Start the PySpark MCP server via spark-submit.
@@ -156,6 +163,16 @@ def main(  # noqa: C901
 
         # With additional JARs
         pyspark-mcp --master "local[*]" --jars /path/to/connector.jar
+
+        # With S3 access using AWS profile from ~/.aws/config
+        pyspark-mcp --master "local[*]" \\
+            --packages org.apache.hadoop:hadoop-aws:3.3.4 \\
+            --aws-profile default
+
+        # With S3 access using a named AWS profile
+        pyspark-mcp --master "local[*]" \\
+            --packages org.apache.hadoop:hadoop-aws:3.3.4 \\
+            --aws-profile my-profile
     """
     # Get path to mcp_server.py
     mcp_server_path = get_mcp_server_path()
@@ -173,6 +190,22 @@ def main(  # noqa: C901
         "--master",
         master,
     ]
+
+    # Add AWS profile configuration if specified
+    # Uses DefaultAWSCredentialsProviderChain which reads from:
+    # 1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    # 2. Java system properties
+    # 3. Web Identity Token credentials
+    # 4. Profile credentials (~/.aws/credentials and ~/.aws/config via AWS_PROFILE env var)
+    # 5. EC2 instance credentials
+    if aws_profile is not None:
+        cmd.extend(
+            [
+                "--conf",
+                "spark.hadoop.fs.s3a.aws.credentials.provider="
+                "com.amazonaws.auth.DefaultAWSCredentialsProviderChain",
+            ]
+        )
 
     # Add any additional spark args
     # Remove --master and its value from spark_args if --master was provided via Click option
@@ -221,6 +254,10 @@ def main(  # noqa: C901
     env = os.environ.copy()
     package_dir = str(Path(mcp_server_path).parent)
     env["PYTHONPATH"] = package_dir + os.pathsep + env.get("PYTHONPATH", "")
+
+    # Set AWS_PROFILE environment variable if specified
+    if aws_profile is not None:
+        env["AWS_PROFILE"] = aws_profile
 
     # Execute spark-submit
     try:
