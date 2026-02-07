@@ -59,29 +59,18 @@ include = [
 
 [dependency-groups]
 dev = [
-    "black>=25.1",
-    "flake8>=7.3",
-    "isort>=6.0",
-    "mypy>=1.17",
+    "ruff>=0.9",
+    "ty",
     "pre-commit>=4.3",
-    "pandas-stubs>=2.3",
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 100
-target-version = ['py311']
-include = 'pyspark_mcp_server/.*\.py$'
+target-version = "py311"
+include = ["pyspark_mcp_server/**/*.py"]
 
-[tool.isort]
-profile = "black"
-src_paths = ["pyspark_mcp_server"]
-line_length = 100
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "C90"]
 
-[tool.mypy]
-python_version = "3.11"
-files = ["pyspark_mcp_server"]
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-check_untyped_defs = true
+[tool.ruff.lint.isort]
+known-first-party = ["pyspark_mcp_server"]

@@ -26,7 +26,8 @@ def get_spark_version() -> str:
 def run_sql_query(query: str) -> str:
     spark: SparkSession = get_context().request_context.lifespan_context  # type: ignore
     result = spark.sql(query)
-    return cast(pd.DataFrame, result.toPandas()).to_json(orient="records")
+    json_result = cast(pd.DataFrame, result.toPandas()).to_json(orient="records")
+    return json_result or "[]"
 
 
 def get_analyzed_logical_plan_of_query(query: str) -> str:
@@ -276,14 +277,16 @@ def start_mcp_server() -> FastMCP:
         Tool.from_function(
             get_output_schema_of_query,
             name="get_query_schema",
-            description="Run query, get the result, get the schema of the result and return a JSON-value of the schema",
+            description="Run query, get the result, get the schema of the result "
+            "and return a JSON-value of the schema",
         ),
     )
     mcp.add_tool(
         Tool.from_function(
             read_n_lines_of_text_file,
             name="read_text_file_lines",
-            description="Read the first N lines of the file as a plain text. Useful to determine the format",
+            description="Read the first N lines of the file as a plain text. "
+            "Useful to determine the format",
         ),
     )
 
