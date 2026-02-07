@@ -10,3 +10,7 @@ wheels/
 .venv
 .idea
 act
+
+# Claude Code
+CLAUDE.md
+.claude
