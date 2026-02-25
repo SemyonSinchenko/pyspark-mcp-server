@@ -167,7 +167,13 @@ def start_mcp_server() -> FastMCP:
     @asynccontextmanager
     async def lifespan(server: FastMCP) -> AsyncIterator[SparkSession]:
         logger.info("Starting the SparkSession")
-        spark = SparkSession.builder.appName("PySpark MCP").getOrCreate()
+        spark = (
+            SparkSession.builder
+            .appName("PySpark MCP")
+            .config("spark.network.timeout", "604800s")
+            .config("spark.executor.heartbeatInterval", "300s")
+            .getOrCreate()
+        )
         yield spark
         logger.info("Stopping the SparkSession")
         spark.stop()

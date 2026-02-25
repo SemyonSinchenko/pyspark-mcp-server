@@ -207,6 +207,12 @@ def main(  # noqa: C901
             ]
         )
 
+    # Default configs for long-running server stability (user's --conf can override)
+    cmd.extend([
+        "--conf", "spark.network.timeout=604800s",
+        "--conf", "spark.executor.heartbeatInterval=300s",
+    ])
+
     # Add any additional spark args
     # Remove --master and its value from spark_args if --master was provided via Click option
     filtered_spark_args = []
