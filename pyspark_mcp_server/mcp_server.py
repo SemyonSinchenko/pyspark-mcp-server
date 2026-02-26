@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import io
 import re
-import signal
+import socket
 import sys
 from contextlib import asynccontextmanager, redirect_stdout, suppress
 from typing import Any, AsyncIterator, cast
@@ -167,10 +168,30 @@ def start_mcp_server() -> FastMCP:
     @asynccontextmanager
     async def lifespan(server: FastMCP) -> AsyncIterator[SparkSession]:
         logger.info("Starting the SparkSession")
-        spark = SparkSession.builder.appName("PySpark MCP").getOrCreate()
+        spark = (
+            SparkSession.builder.appName("PySpark MCP")
+            .config("spark.network.timeout", "604800s")
+            .config("spark.executor.heartbeatInterval", "300s")
+            # Disable Spark UI to avoid holding port 4040 after exit
+            .config("spark.ui.enabled", "false")
+            .getOrCreate()
+        )
+
+        # Register atexit handler so spark.stop() runs even on unclean exits
+        # (e.g., timeout crashes, SIGKILL). This is a safety net beyond the
+        # normal lifespan cleanup below.
+        def _stop_spark() -> None:
+            try:
+                spark.stop()
+            except Exception:
+                pass
+
+        atexit.register(_stop_spark)
+
         yield spark
         logger.info("Stopping the SparkSession")
         spark.stop()
+        atexit.unregister(_stop_spark)
 
     mcp = FastMCP(lifespan=lifespan)
 
@@ -305,20 +326,61 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Set up signal handlers for clean shutdown
-    # This ensures the server stops properly when receiving SIGINT (CTRL-C) or SIGTERM,
-    # preventing port binding issues on restart
-    def signal_handler(signum: int, frame: Any) -> None:
-        logger.info(f"Received signal {signum}, shutting down gracefully...")
-        sys.exit(0)
+    # Check port availability before starting SparkSession (which takes seconds)
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((args.host, args.port))
+    except OSError:
+        logger.error(
+            f"Port {args.port} is already in use on {args.host}. "
+            f"Use --port to specify a different port."
+        )
+        sys.exit(1)
 
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    # Monkey-patch socket creation to set SO_REUSEADDR and SO_REUSEPORT on all
+    # TCP sockets. This allows immediate port reuse after exit, even when
+    # connections are stuck in TIME_WAIT (common after timeout crashes).
+    # SO_REUSEPORT is critical on macOS where SO_REUSEADDR alone is insufficient.
+    original_socket = socket.socket
+
+    def patched_socket(
+        family: int = socket.AF_INET,
+        type: int = socket.SOCK_STREAM,
+        *args: Any,
+        **kwargs: Any,
+    ) -> socket.socket:
+        sock = original_socket(family, type, *args, **kwargs)
+        if family in (socket.AF_INET, socket.AF_INET6) and type == socket.SOCK_STREAM:
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            except OSError:
+                pass
+            if hasattr(socket, "SO_REUSEPORT"):
+                try:
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+                except OSError:
+                    pass
+        return sock
+
+    socket.socket = patched_socket  # type: ignore[misc]
+
+    goodbye = """
+
+    *    .  *       .             *
+         *       *        .   *     .  *
+   .  *     Spark stopped.     .
+        .   Session ended cleanly.  *
+     *        Goodbye!       .     *
+  .      *        .    *   .         .
+    """
 
     try:
         start_mcp_server().run(transport="http", port=args.port, host=args.host)
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, shutting down...")
+    except (KeyboardInterrupt, SystemExit):
+        print(goodbye)
+    finally:
+        socket.socket = original_socket
 
 
 if __name__ == "__main__":
