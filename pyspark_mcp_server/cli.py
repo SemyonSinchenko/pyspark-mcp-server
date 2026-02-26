@@ -207,6 +207,9 @@ def main(  # noqa: C901
             ]
         )
 
+    # Disable Spark UI to avoid holding port 4040 after exit (user's --conf can override)
+    cmd.extend(["--conf", "spark.ui.enabled=false"])
+
     # Add any additional spark args
     # Remove --master and its value from spark_args if --master was provided via Click option
     filtered_spark_args = []
