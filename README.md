@@ -38,7 +38,7 @@ pyspark-mcp --master "local[*]" --jars /path/to/connector.jar
 pyspark-mcp --master "local[*]" --dry-run
 
 # With GraphFrames package
-pyspark-mcp --master "local[*]" --packages io.graphframes:graphframes-spark3_2.12:0.10.0
+pyspark-mcp --master "local[*]" --packages io.graphframes:graphframes-spark3_2.12:0.10.1
 ```
 
 #### CLI Options

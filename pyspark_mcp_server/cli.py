@@ -7,6 +7,7 @@ automatically locating the mcp_server.py script and invoking spark-submit.
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -41,6 +42,18 @@ SPARK_OPTIONS_WITH_VALUE = {
     "--keytab",
     "--queue",
     "--archives",
+}
+
+# Spark-submit options that accept comma-separated values and should be merged
+# when specified multiple times (spark-submit only uses the last occurrence)
+SPARK_MERGEABLE_OPTIONS = {
+    "--packages",
+    "--jars",
+    "--py-files",
+    "--files",
+    "--archives",
+    "--exclude-packages",
+    "--repositories",
 }
 
 # Spark-submit boolean flags (no value)
@@ -99,6 +112,71 @@ def parse_spark_and_mcp_args(args: tuple[str, ...]) -> tuple[list[str], list[str
         i += 1
 
     return spark_args, mcp_args
+
+
+def merge_spark_args(spark_args: list[str]) -> list[str]:
+    """Merge multiple occurrences of comma-separated spark-submit options.
+
+    Options like --packages, --jars, etc. accept comma-separated values.
+    When specified multiple times, spark-submit only uses the last one.
+    This function merges all values into a single comma-separated string.
+
+    Args:
+        spark_args: List of spark-submit arguments (flag-value pairs)
+
+    Returns:
+        New list with mergeable options consolidated
+    """
+    collected: dict[str, list[str]] = {}
+    other_args: list[str] = []
+    merge_order: list[str] = []
+
+    i = 0
+    while i < len(spark_args):
+        arg = spark_args[i]
+
+        # Check for --option=value form
+        matched_equals = False
+        for opt in SPARK_MERGEABLE_OPTIONS:
+            if arg.startswith(f"{opt}="):
+                value = arg[len(opt) + 1 :]
+                if opt not in collected:
+                    merge_order.append(opt)
+                    collected[opt] = []
+                collected[opt].append(value)
+                matched_equals = True
+                break
+
+        if matched_equals:
+            i += 1
+            continue
+
+        # Check for --option value form (separated)
+        if arg in SPARK_MERGEABLE_OPTIONS:
+            if i + 1 < len(spark_args):
+                value = spark_args[i + 1]
+                if arg not in collected:
+                    merge_order.append(arg)
+                    collected[arg] = []
+                collected[arg].append(value)
+                i += 2
+                continue
+            else:
+                other_args.append(arg)
+                i += 1
+                continue
+
+        other_args.append(arg)
+        i += 1
+
+    # Reconstruct: merged options first (in order of first occurrence), then others
+    result: list[str] = []
+    for opt in merge_order:
+        merged_value = ",".join(collected[opt])
+        result.extend([opt, merged_value])
+    result.extend(other_args)
+
+    return result
 
 
 @click.command(context_settings={"ignore_unknown_options": True, "allow_extra_args": True})
@@ -183,6 +261,7 @@ def main(  # noqa: C901
 
     # Parse extra args to separate Spark args from any additional MCP args
     spark_args, extra_mcp_args = parse_spark_and_mcp_args(tuple(ctx.args))
+    spark_args = merge_spark_args(spark_args)
 
     # Build the spark-submit command
     cmd = [
@@ -214,6 +293,8 @@ def main(  # noqa: C901
             "spark.network.timeout=604800s",
             "--conf",
             "spark.executor.heartbeatInterval=300s",
+            "--conf",
+            "spark.ui.enabled=false",
         ]
     )
 
@@ -260,6 +341,19 @@ def main(  # noqa: C901
         click.echo(" ".join(cmd))
         return
 
+    # Check port availability before starting spark-submit (which starts the JVM)
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((host, port))
+    except OSError:
+        click.echo(
+            f"Error: Port {port} is already in use on {host}. "
+            f"Use --port to specify a different port, or stop the process using port {port}.",
+            err=True,
+        )
+        sys.exit(1)
+
     # Set up environment - ensure PYTHONPATH includes the package
     env = os.environ.copy()
     package_dir = str(Path(mcp_server_path).parent)
@@ -282,7 +376,15 @@ def main(  # noqa: C901
         )
         sys.exit(1)
     except KeyboardInterrupt:
-        click.echo("\nShutting down...")
+        click.echo(
+            "\n"
+            "    *    .  *       .             *\n"
+            "         *       *        .   *     .  *\n"
+            "   .  *     Spark stopped.     .\n"
+            "        .   Session ended cleanly.  *\n"
+            "     *        Goodbye!       .     *\n"
+            "  .      *        .    *   .         .\n"
+        )
         sys.exit(0)
 
 

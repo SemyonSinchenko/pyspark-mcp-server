@@ -62,6 +62,7 @@ dev = [
     "ruff>=0.9",
     "ty",
     "pre-commit>=4.3",
+    "pyspark-mcp",
 ]
 
 [tool.ruff]
@@ -74,3 +75,6 @@ select = ["E", "F", "W", "I", "C90"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pyspark_mcp_server"]
+
+[tool.uv.sources]
+pyspark-mcp = { workspace = true }
